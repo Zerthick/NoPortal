@@ -27,8 +27,9 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.CollideBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.world.ConstructPortalEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
@@ -85,6 +86,17 @@ public class NoPortal {
                     event.setCancelled(true);
                 }
             } else {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @Listener
+    public void onPortalEnter(CollideBlockEvent event, @Root Player player) {
+
+        if (event.getTargetBlock().getType().equals(BlockTypes.PORTAL)) {
+
+            if (!player.hasPermission("noportal.enter")) {
                 event.setCancelled(true);
             }
         }
