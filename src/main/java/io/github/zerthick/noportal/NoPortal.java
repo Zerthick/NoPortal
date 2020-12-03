@@ -20,9 +20,14 @@
 package io.github.zerthick.noportal;
 
 import com.google.inject.Inject;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -34,7 +39,10 @@ import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.text.serializer.TextSerializers;
 
+import java.io.*;
+import java.nio.file.Path;
 import java.util.Optional;
 
 @Plugin(
@@ -53,6 +61,11 @@ public class NoPortal {
     @Inject
     private PluginContainer instance;
 
+    @Inject
+    @DefaultConfig(sharedRoot = true)
+    private Path config;
+    private Text permissionText;
+
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
 
@@ -61,6 +74,7 @@ public class NoPortal {
                 instance.getName() + " version " + instance.getVersion().orElse("unknown")
                         + " enabled!");
 
+        loadConfig();
     }
 
     @Listener
@@ -68,21 +82,21 @@ public class NoPortal {
 
         boolean containsPortalBlocks = false;
 
-        for(Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-            if(transaction.getFinal().getState().getType().equals(BlockTypes.PORTAL)) {
+        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
+            if (transaction.getFinal().getState().getType().equals(BlockTypes.PORTAL)) {
                 containsPortalBlocks = true;
                 break;
             }
         }
 
-        if(containsPortalBlocks) {
+        if (containsPortalBlocks) {
             Optional<Player> playerOptional = event.getCause().first(Player.class);
 
             if (playerOptional.isPresent()) {
                 Player player = playerOptional.get();
 
                 if (!player.hasPermission("noportal.create")) {
-                    player.sendMessage(Text.of(TextColors.RED, "You don't have permission to create a portal!"));
+                    player.sendMessage(permissionText);
                     event.setCancelled(true);
                 }
             } else {
@@ -99,6 +113,30 @@ public class NoPortal {
             if (!player.hasPermission("noportal.enter")) {
                 event.setCancelled(true);
             }
+        }
+    }
+
+    private void loadConfig() {
+        if (!config.toFile().exists()) {
+            // Create config if not exists
+            try {
+                InputStream in = this.getClass().getResourceAsStream("/config.conf");
+                OutputStream out = new FileOutputStream(config.toFile());
+                byte[] buff = new byte[1024];
+                int len;
+                while ((len = in.read(buff)) > 0) {
+                    out.write(buff, 0, len);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            ConfigurationLoader<CommentedConfigurationNode> loader = HoconConfigurationLoader.builder().setPath(config).build();
+            ConfigurationNode rootNode = loader.load().getNode();
+            permissionText = TextSerializers.FORMATTING_CODE.deserialize(rootNode.getNode("NoPortalCreationPermissionError").getString());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
