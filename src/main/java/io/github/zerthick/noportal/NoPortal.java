@@ -134,7 +134,7 @@ public class NoPortal {
         try {
             ConfigurationLoader<CommentedConfigurationNode> loader = HoconConfigurationLoader.builder().setPath(config).build();
             ConfigurationNode rootNode = loader.load().getNode();
-            permissionText = TextSerializers.FORMATTING_CODE.deserialize(rootNode.getNode("NoPortalCreationPermissionError").getString());
+            permissionText = TextSerializers.FORMATTING_CODE.deserialize(rootNode.getNode("NoPortalCreationPermissionError").getString("You don't have permission to create a portal!"));
         } catch (IOException e) {
             e.printStackTrace();
         }
