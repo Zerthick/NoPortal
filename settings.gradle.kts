@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2018  Zerthick
+ * Copyright (C) 2022 Zerthick
  *
  * This file is part of NoPortal.
  *
  * NoPortal is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * NoPortal is distributed in the hope that it will be useful,
@@ -14,25 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with NoPortal.  If not, see <http://www.gnu.org/licenses/>.
+ * along with NoSleep.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-plugins {
-    id 'org.spongepowered.plugin' version '0.9.0'
-    id 'java'
-}
-
-group 'io.github.zerthick'
-version '1.2.0'
-
-repositories {
-    mavenCentral()
-    maven {
-        name = 'sponge'
-        url = 'http://repo.spongepowered.org/maven'
-    }
-}
-
-dependencies {
-    compile 'org.spongepowered:spongeapi:7.3.0'
-}
+rootProject.name = "NoPortal"
