@@ -23,8 +23,16 @@ import com.google.inject.Inject;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.logging.log4j.Logger;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.transaction.BlockTransaction;
 import org.spongepowered.api.config.DefaultConfig;
+import org.spongepowered.api.entity.living.player.server.ServerPlayer;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.block.CollideBlockEvent;
+import org.spongepowered.api.event.filter.Getter;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.lifecycle.ConstructPluginEvent;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
@@ -38,6 +46,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 @Plugin("noportal")
@@ -45,18 +54,16 @@ public class NoPortal {
 
     private final PluginContainer container;
     private final Logger logger;
+    @Inject
+    @DefaultConfig(sharedRoot = true)
+    private Path configPath;
+    private Component permissionText;
 
     @Inject
     NoPortal(final PluginContainer container, final Logger logger) {
         this.container = container;
         this.logger = logger;
     }
-
-    @Inject
-    @DefaultConfig(sharedRoot = true)
-    private Path configPath;
-
-    private Component permissionText;
 
     @Listener
     public void onConstructPlugin(final ConstructPluginEvent event) {
@@ -66,50 +73,54 @@ public class NoPortal {
                         + " enabled!");
 
         // Load permission text from config
-        loadConfig().ifPresent(c -> permissionText = LegacyComponentSerializer.legacyAmpersand().deserialize(c.node("NoPortalCreationPermissionError").getString("")));
+        Optional<ConfigurationNode> configOptional = loadConfig();
 
-        logger.error(permissionText);
+        if (configOptional.isPresent()) {
+            ConfigurationNode config = configOptional.get();
+            permissionText = LegacyComponentSerializer.legacyAmpersand().deserialize(config.node("NoPortalNetherPortalCreationPermissionError").getString(""));
+        } else {
+            logger.error("Unable to load configuration file!");
+        }
     }
 
-    //    @Listener
-//    public void onPortalCreate(ChangeBlockEvent.Place event) {
-//
-//        boolean containsPortalBlocks = false;
-//
-//        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
-//            if (transaction.getFinal().getState().getType().equals(BlockTypes.PORTAL)) {
-//                containsPortalBlocks = true;
-//                break;
-//            }
-//        }
-//
-//        if (containsPortalBlocks) {
-//            Optional<Player> playerOptional = event.getCause().first(Player.class);
-//
-//            if (playerOptional.isPresent()) {
-//                Player player = playerOptional.get();
-//
-//                if (!player.hasPermission("noportal.create")) {
-//                    player.sendMessage(permissionText);
-//                    event.setCancelled(true);
-//                }
-//            } else {
-//                event.setCancelled(true);
-//            }
-//        }
-//    }
-//
-//    @Listener
-//    public void onPortalEnter(CollideBlockEvent event, @Root Player player) {
-//
-//        if (event.getTargetBlock().getType().equals(BlockTypes.PORTAL)) {
-//
-//            if (!player.hasPermission("noportal.enter")) {
-//                event.setCancelled(true);
-//            }
-//        }
-//    }
-//
+    @Listener
+    public void onPortalCreate(ChangeBlockEvent.All event, @Getter("transactions") List<BlockTransaction> transactions) {
+
+        for (BlockTransaction transaction : transactions) {
+            if (transaction.finalReplacement().state().type().equals(BlockTypes.NETHER_PORTAL.get())) {
+
+                Optional<ServerPlayer> playerOptional = event.cause().first(ServerPlayer.class);
+
+                if (playerOptional.isPresent()) {
+                    ServerPlayer player = playerOptional.get();
+                    if (!player.hasPermission("noportal.netherportal.create")) {
+                        player.sendMessage(permissionText);
+                        event.invalidateAll();
+                    }
+                } else {
+                    event.invalidateAll();
+                }
+                break;
+            }
+        }
+    }
+
+    @Listener
+    public void onPortalEnter(CollideBlockEvent event, @Root ServerPlayer player, @Getter("targetBlock") BlockState targetBlock) {
+
+        if (targetBlock.type().equals(BlockTypes.NETHER_PORTAL.get())) {
+            if (!player.hasPermission("noportal.netherportal.enter")) {
+                event.setCancelled(true);
+            }
+        }
+
+        if (targetBlock.type().equals(BlockTypes.END_PORTAL.get())) {
+            if (!player.hasPermission("noportal.endportal.enter")) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
     private Optional<ConfigurationNode> loadConfig() {
         if (!configPath.toFile().exists()) {
             // Create config if not exists

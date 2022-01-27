@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2022 Zerthick
+ * Copyright (C) 2022 Zerthick
  *
  * This file is part of NoPortal.
  *
