@@ -77,7 +77,7 @@ public class NoPortal {
 
         if (configOptional.isPresent()) {
             ConfigurationNode config = configOptional.get();
-            permissionText = LegacyComponentSerializer.legacyAmpersand().deserialize(config.node("NoPortalNetherPortalCreationPermissionError").getString(""));
+            permissionText = LegacyComponentSerializer.legacyAmpersand().deserialize(config.node("NoPortalNetherPortalCreationPermissionError").getString("Unable to load NoPortal permission message!"));
         } else {
             logger.error("Unable to load configuration file!");
         }
