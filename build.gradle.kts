@@ -14,7 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with NoSleep.  If not, see <http://www.gnu.org/licenses/>.
+ * along with NoPortal.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 import org.spongepowered.gradle.plugin.config.PluginLoaders
@@ -22,18 +22,18 @@ import org.spongepowered.plugin.metadata.model.PluginDependency
 
 plugins {
     `java-library`
-    id("org.spongepowered.gradle.plugin") version "2.0.1"
+    id("org.spongepowered.gradle.plugin") version "2.0.2"
 }
 
 group = "io.github.zerthick"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     mavenCentral()
 }
 
 sponge {
-    apiVersion("8.0.0")
+    apiVersion("9.0.0")
     license("GPLV3")
     loader {
         name(PluginLoaders.JAVA_PLAIN)
@@ -58,10 +58,13 @@ sponge {
     }
 }
 
-val javaTarget = 8 // Sponge targets a minimum of Java 8
+val javaTarget = 17 // Sponge targets a minimum of Java 8
 java {
     sourceCompatibility = JavaVersion.toVersion(javaTarget)
     targetCompatibility = JavaVersion.toVersion(javaTarget)
+    if (JavaVersion.current() < JavaVersion.toVersion(javaTarget)) {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(javaTarget))
+    }
 }
 
 tasks.withType(JavaCompile::class).configureEach {
